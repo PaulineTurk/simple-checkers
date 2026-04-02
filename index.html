@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jeu de Dames</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <div class="scores">
+      <div class="score white-turn">Blanc: <span id="white-count">12</span></div>
+      <div class="score">Noir: <span id="black-count">12</span></div>
+    </div>
+    <div class="turn-indicator" id="turn-indicator">Tour: Blanc</div>
+    <div class="board" id="board"></div>
+    <div class="winner" id="winner"></div>
+    <button class="restart-btn" onclick="game.reset(); renderBoard();">Rejouer</button>
+  </div>
+  <script type="module">
+    import { CheckersGame } from './game.js';
+
+    const game = new CheckersGame();
+    let selected = null;
+
+    window.game = game;
+
+    function renderBoard() {
+      const boardEl = document.getElementById('board');
+      boardEl.innerHTML = '';
+
+      const counts = game.getCounts();
+      document.getElementById('white-count').textContent = counts.white;
+      document.getElementById('black-count').textContent = counts.black;
+
+      const turnEl = document.getElementById('turn-indicator');
+      turnEl.textContent = `Tour: ${game.currentPlayer === 'white' ? 'Blanc' : 'Noir'}`;
+      turnEl.className = `turn-indicator ${game.currentPlayer}-turn`;
+
+      const winner = game.getWinner();
+      const winnerEl = document.getElementById('winner');
+      if (winner) {
+        winnerEl.textContent = `Victoire: ${winner === 'white' ? 'Blanc' : 'Noir'}`;
+        winnerEl.style.display = 'block';
+      } else {
+        winnerEl.style.display = 'none';
+      }
+
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const cell = document.createElement('div');
+          cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+
+          const piece = game.getPiece(row, col);
+          if (piece) {
+            cell.classList.add('piece', piece.player);
+            if (piece.isKing) cell.classList.add('king');
+          }
+
+          if (selected && selected.row === row && selected.col === col) {
+            cell.classList.add('selected');
+          }
+
+          const validMoves = game.getValidMoves(row, col);
+          if (validMoves.length > 0 && (!selected || selected.player !== game.currentPlayer)) {
+            cell.classList.add('valid-move');
+          }
+
+          if (selected) {
+            const move = game.getValidMoves(selected.row, selected.col)
+              .find(m => m.toRow === row && m.toCol === col);
+            if (move) {
+              cell.classList.add('valid-target');
+            }
+          }
+
+          cell.addEventListener('click', () => handleCellClick(row, col));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function handleCellClick(row, col) {
+      const piece = game.getPiece(row, col);
+
+      if (selected) {
+        const result = game.move(selected.row, selected.col, row, col);
+        if (result.success) {
+          if (!result.mustContinue) {
+            selected = null;
+          } else {
+            selected = { row, col, player: game.currentPlayer };
+          }
+          renderBoard();
+          return;
+        }
+      }
+
+      if (piece && piece.player === game.currentPlayer) {
+        const moves = game.getValidMoves(row, col);
+        if (moves.length > 0) {
+          selected = { row, col, player: piece.player };
+          renderBoard();
+        }
+      }
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
