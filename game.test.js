@@ -177,18 +177,18 @@ describe('CheckersGame', () => {
       game.board = Array(8).fill(null).map(() => Array(8).fill(null));
       game.board[4][4] = { player: 'white', isKing: false };
       game.board[3][3] = { player: 'black', isKing: false };
-      game.board[5][3] = { player: 'black', isKing: false };
-      game.board[2][2] = null;
-      game.board[6][2] = null;
-
+      game.board[3][1] = { player: 'black', isKing: false };
+      game.board[4][0] = null;
       game.currentPlayer = 'white';
-      const result = game.move(4, 4, 2, 2);
 
+      const result = game.move(4, 4, 2, 2);
       expect(result.mustContinue).toBe(true);
 
       const nextMoves = game.getValidMoves(2, 2);
-      const backwardJump = nextMoves.find(m => m.jumpRow === 3 && m.jumpCol === 3);
+      const backwardJump = nextMoves.find(m => m.jumpRow === 3 && m.jumpCol === 1);
       expect(backwardJump).toBeDefined();
+      expect(backwardJump.toRow).toBe(4);
+      expect(backwardJump.toCol).toBe(0);
     });
 
     it('interdit la capture en arrière à l\'initiation', () => {
