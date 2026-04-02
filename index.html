@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Jeu de Dames</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="game-container">
     <div class="scores">
@@ -15,15 +17,58 @@
     <div class="turn-indicator" id="turn-indicator">Tour: Blanc</div>
     <div class="board" id="board"></div>
     <div class="winner" id="winner"></div>
-    <button class="restart-btn" onclick="game.reset(); renderBoard();">Rejouer</button>
+    <div class="buttons">
+      <button class="restart-btn" onclick="newGame()">Nouvelle partie</button>
+      <button class="restart-btn secondary-btn" onclick="resumeGame()" id="resume-btn"
+        style="display:none">Reprendre</button>
+    </div>
   </div>
   <script type="module">
     import { CheckersGame } from './game.js';
 
-    const game = new CheckersGame();
+    const STORAGE_KEY = 'checkers_game_state';
+    let game = new CheckersGame();
     let selected = null;
 
     window.game = game;
+
+    function saveGame() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          board: game.board,
+          currentPlayer: game.currentPlayer,
+          mustJumpFrom: game.mustJumpFrom,
+          hasJumpedForward: game.hasJumpedForward,
+        }));
+      } catch (e) { }
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function clearSave() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) { }
+    }
+
+    window.newGame = function () {
+      clearSave();
+      game.reset();
+      selected = null;
+      renderBoard();
+    };
+
+    // Restore saved state into the game object
+    const saved = loadGame();
+    if (saved) {
+      game.board = saved.board;
+      game.currentPlayer = saved.currentPlayer;
+      game.mustJumpFrom = saved.mustJumpFrom;
+      game.hasJumpedForward = saved.hasJumpedForward ?? false;
+    }
 
     function renderBoard() {
       const boardEl = document.getElementById('board');
@@ -42,6 +87,7 @@
       if (winner) {
         winnerEl.textContent = `Victoire: ${winner === 'white' ? 'Blanc' : 'Noir'}`;
         winnerEl.style.display = 'block';
+        clearSave(); // partie terminée, on efface la sauvegarde
       } else {
         winnerEl.style.display = 'none';
       }
@@ -71,9 +117,7 @@
           if (selected) {
             const move = game.getValidMoves(selected.row, selected.col)
               .find(m => m.toRow === row && m.toCol === col);
-            if (move) {
-              cell.classList.add('valid-target');
-            }
+            if (move) cell.classList.add('valid-target');
           }
 
           cell.addEventListener('click', () => handleCellClick(row, col));
@@ -88,6 +132,7 @@
       if (selected) {
         const result = game.move(selected.row, selected.col, row, col);
         if (result.success) {
+          saveGame(); // ← sauvegarde après chaque coup
           if (!result.mustContinue) {
             selected = null;
           } else {
@@ -110,4 +155,5 @@
     renderBoard();
   </script>
 </body>
+
 </html>
