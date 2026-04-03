@@ -101,9 +101,12 @@
           cell.dataset.col = col;
 
           const piece = game.getPiece(row, col);
+          let pieceEl = null;
           if (piece) {
-            cell.classList.add('piece', piece.player);
-            if (piece.isKing) cell.classList.add('king');
+            pieceEl = document.createElement('div');
+            pieceEl.className = `piece ${piece.player}`;
+            if (piece.isKing) pieceEl.classList.add('king');
+            cell.appendChild(pieceEl);
           }
 
           if (selected && selected.row === row && selected.col === col) {
@@ -112,7 +115,11 @@
 
           const validMoves = game.getValidMoves(row, col);
           if (validMoves.length > 0 && (!selected || selected.player !== game.currentPlayer)) {
-            cell.classList.add('valid-move');
+            if (pieceEl) {
+              pieceEl.classList.add('valid-move');
+            } else {
+              cell.classList.add('valid-move');
+            }
           }
 
           if (selected) {
